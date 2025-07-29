@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
 import { GameScene } from './scenes/GameScene';
-import { GAME_CONFIG } from './utils/constants';
+import { GAME_CONFIG, COLORS } from './utils/constants';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: GAME_CONFIG.WIDTH,
   height: GAME_CONFIG.HEIGHT,
   parent: document.body,
-  backgroundColor: GAME_CONFIG.BACKGROUND,
+  backgroundColor: COLORS.BACKGROUND,
   physics: {
     default: 'arcade',
     arcade: {

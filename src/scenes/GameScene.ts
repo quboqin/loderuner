@@ -7,6 +7,7 @@ export class GameScene extends Phaser.Scene {
   private levelManager!: LevelManager;
   private terrainLayer!: Phaser.GameObjects.Layer;
   private player!: Player;
+  private terrainGroup!: Phaser.Physics.Arcade.StaticGroup;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -24,9 +25,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createLevel() {
+    this.terrainGroup = this.physics.add.staticGroup();
     this.terrainLayer = this.add.layer();
     this.renderTerrain();
     this.createPlayer();
+    this.setupCollisions();
   }
 
   private createPlayer() {
@@ -44,6 +47,7 @@ export class GameScene extends Phaser.Scene {
 
   renderTerrain() {
     this.terrainLayer.removeAll(true);
+    this.terrainGroup.clear(true, true);
     const level = this.levelManager.getCurrentLevel();
     if (!level) return;
 
@@ -53,7 +57,7 @@ export class GameScene extends Phaser.Scene {
         const worldX = x * GAME_CONFIG.TILE_SIZE;
         const worldY = y * GAME_CONFIG.TILE_SIZE;
 
-        let color: number;
+        let color: number = 0x000000;
         let shouldRender = true;
 
         switch (tileType) {
@@ -99,8 +103,27 @@ export class GameScene extends Phaser.Scene {
           }
           
           this.terrainLayer.add(tile);
+          
+          // Add physics body for solid tiles
+          if (tileType === TILE_TYPES.BRICK || tileType === TILE_TYPES.METAL) {
+            const rect = this.add.rectangle(
+              worldX + GAME_CONFIG.TILE_SIZE / 2,
+              worldY + GAME_CONFIG.TILE_SIZE / 2,
+              GAME_CONFIG.TILE_SIZE,
+              GAME_CONFIG.TILE_SIZE
+            );
+            rect.visible = false;
+            const physicsBody = this.physics.add.existing(rect, true);
+            this.terrainGroup.add(physicsBody);
+          }
         }
       }
+    }
+  }
+
+  private setupCollisions() {
+    if (this.player && this.terrainGroup) {
+      this.physics.add.collider(this.player, this.terrainGroup);
     }
   }
 }

@@ -10,7 +10,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private moveSpeed = 150;
 
   constructor(scene: Phaser.Scene, x: number, y: number, levelManager: LevelManager) {
-    super(scene, x, y, '');
+    // Create visual first
+    Player.createPlayerTexture(scene);
+    
+    super(scene, x, y, 'player');
     
     this.levelManager = levelManager;
     
@@ -18,12 +21,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.physics.add.existing(this);
     
     this.setSize(GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-    this.setTint(COLORS.PLAYER);
     
-    this.body!.setCollideWorldBounds(true);
+    const body = this.body as Phaser.Physics.Arcade.Body;
+    body.setCollideWorldBounds(true);
+    body.setBounce(0);
+    body.setDragX(0);
     
     this.createKeys();
-    this.createVisual();
   }
 
   private createKeys() {
@@ -37,14 +41,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     };
   }
 
-  private createVisual() {
-    const graphics = this.scene.add.graphics();
-    graphics.fillStyle(COLORS.PLAYER);
-    graphics.fillRect(0, 0, GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-    graphics.generateTexture('player', GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-    graphics.destroy();
-    
-    this.setTexture('player');
+  static createPlayerTexture(scene: Phaser.Scene) {
+    if (!scene.textures.exists('player')) {
+      const graphics = scene.add.graphics();
+      graphics.fillStyle(COLORS.PLAYER);
+      graphics.fillRect(0, 0, GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
+      graphics.generateTexture('player', GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
+      graphics.destroy();
+    }
   }
 
   update() {
