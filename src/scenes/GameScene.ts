@@ -30,9 +30,27 @@ export class GameScene extends Phaser.Scene {
     
     if (this.levelManager.setCurrentLevel(1)) {
       this.createLevel();
+      this.debugLadderPositions();
     } else {
       console.error('Failed to load level 1');
     }
+  }
+
+  private debugLadderPositions() {
+    const level = this.levelManager.getCurrentLevel();
+    if (!level) return;
+    
+    console.log('=== LADDER POSITIONS ===');
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        if (level.terrain[y][x] === TILE_TYPES.LADDER) {
+          const worldX = x * GAME_CONFIG.TILE_SIZE;
+          const worldY = y * GAME_CONFIG.TILE_SIZE;
+          console.log(`Ladder at tile (${x}, ${y}) = world (${worldX}, ${worldY})`);
+        }
+      }
+    }
+    console.log('========================');
   }
 
   private createLevel() {
@@ -138,7 +156,7 @@ export class GameScene extends Phaser.Scene {
           
           this.terrainLayer.add(tile);
           
-          // Add physics body for solid tiles
+          // Add physics body for solid tiles only (not ladders/poles)
           if (tileType === TILE_TYPES.BRICK || tileType === TILE_TYPES.METAL) {
             const rect = this.add.rectangle(
               worldX + GAME_CONFIG.TILE_SIZE / 2,
@@ -165,10 +183,10 @@ export class GameScene extends Phaser.Scene {
       this.physics.add.collider(guard, this.terrainGroup);
     });
     
-    // Add collision detection between player and guards
-    this.guards.forEach(guard => {
-      this.physics.add.overlap(this.player, guard, this.handlePlayerGuardCollision, undefined, this);
-    });
+    // Add collision detection between player and guards (disabled for movement testing)
+    // this.guards.forEach(guard => {
+    //   this.physics.add.overlap(this.player, guard, this.handlePlayerGuardCollision, undefined, this);
+    // });
     
     // Add collision detection between player and gold
     this.goldItems.forEach(gold => {

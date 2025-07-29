@@ -83,7 +83,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       body.setGravityY(300);
     } else {
       body.setGravityY(0);
-      body.setVelocityY(0);
+      // Don't reset velocity here, let climbing control it
     }
 
     // Test with cursor keys first
@@ -116,6 +116,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       if (this.keys.up.isDown) {
         body.setVelocityY(-this.moveSpeed);
       } else if (this.keys.down.isDown) {
+        body.setVelocityY(this.moveSpeed);
+      } else {
+        body.setVelocityY(0);
+      }
+    }
+    
+    // Also test cursor keys for climbing
+    if (this.isOnLadder) {
+      if (cursors.up.isDown) {
+        body.setVelocityY(-this.moveSpeed);
+      } else if (cursors.down.isDown) {
         body.setVelocityY(this.moveSpeed);
       }
     }
@@ -152,14 +163,28 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private checkTileCollisions() {
-    const tileX = Math.floor(this.x / GAME_CONFIG.TILE_SIZE);
-    const tileY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
+    // Check multiple positions for ladder detection
+    const leftX = Math.floor((this.x - 8) / GAME_CONFIG.TILE_SIZE);
+    const rightX = Math.floor((this.x + 8) / GAME_CONFIG.TILE_SIZE);
+    const centerX = Math.floor(this.x / GAME_CONFIG.TILE_SIZE);
+    const centerY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
     
-    const currentTile = this.levelManager.getTileAt(tileX, tileY);
-    const belowTile = this.levelManager.getTileAt(tileX, tileY + 1);
+    const currentTile = this.levelManager.getTileAt(centerX, centerY);
+    const leftTile = this.levelManager.getTileAt(leftX, centerY);
+    const rightTile = this.levelManager.getTileAt(rightX, centerY);
+    const belowTile = this.levelManager.getTileAt(centerX, centerY + 1);
     
-    this.isOnLadder = currentTile === TILE_TYPES.LADDER;
+    // Player is on ladder if any nearby tile is a ladder
+    this.isOnLadder = currentTile === TILE_TYPES.LADDER || 
+                     leftTile === TILE_TYPES.LADDER || 
+                     rightTile === TILE_TYPES.LADDER;
+    
     this.isOnPole = currentTile === TILE_TYPES.POLE || belowTile === TILE_TYPES.POLE;
+    
+    // Debug only when found ladder
+    if (this.isOnLadder) {
+      console.log(`ON LADDER: Player at (${this.x.toFixed(1)}, ${this.y.toFixed(1)}), tiles: center=${currentTile}, left=${leftTile}, right=${rightTile}`);
+    }
   }
 
   private canMoveUp(): boolean {
