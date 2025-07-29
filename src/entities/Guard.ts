@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
-import { GAME_CONFIG, COLORS, TILE_TYPES } from '../utils/constants';
+import { GAME_CONFIG, TILE_TYPES } from '../utils/constants';
 import { LevelManager } from '../systems/LevelManager';
 import { Player } from './Player';
+import { SpriteGenerator } from '../utils/SpriteGenerator';
 
 export class Guard extends Phaser.Physics.Arcade.Sprite {
   private levelManager: LevelManager;
@@ -13,7 +14,7 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene: Phaser.Scene, x: number, y: number, levelManager: LevelManager, player: Player) {
     // Create visual first
-    Guard.createGuardTexture(scene);
+    SpriteGenerator.createGuardSprite(scene);
     
     super(scene, x, y, 'guard');
     
@@ -35,15 +36,6 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
     console.log('Guard created at:', this.x, this.y);
   }
 
-  static createGuardTexture(scene: Phaser.Scene) {
-    if (!scene.textures.exists('guard')) {
-      const graphics = scene.add.graphics();
-      graphics.fillStyle(COLORS.GUARD);
-      graphics.fillRect(0, 0, GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-      graphics.generateTexture('guard', GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-      graphics.destroy();
-    }
-  }
 
   update(time: number) {
     if (!this.body) {

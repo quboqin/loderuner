@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { GAME_CONFIG, COLORS, KEYS, TILE_TYPES } from '../utils/constants';
+import { GAME_CONFIG, KEYS, TILE_TYPES } from '../utils/constants';
 import { LevelManager } from '../systems/LevelManager';
+import { SpriteGenerator } from '../utils/SpriteGenerator';
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private keys!: { [key: string]: Phaser.Input.Keyboard.Key };
@@ -12,7 +13,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   constructor(scene: Phaser.Scene, x: number, y: number, levelManager: LevelManager) {
     // Create visual first
-    Player.createPlayerTexture(scene);
+    SpriteGenerator.createPlayerSprite(scene);
     
     super(scene, x, y, 'player');
     
@@ -54,15 +55,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     console.log('Scene input keyboard available:', !!this.scene.input.keyboard);
   }
 
-  static createPlayerTexture(scene: Phaser.Scene) {
-    if (!scene.textures.exists('player')) {
-      const graphics = scene.add.graphics();
-      graphics.fillStyle(COLORS.PLAYER);
-      graphics.fillRect(0, 0, GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-      graphics.generateTexture('player', GAME_CONFIG.TILE_SIZE - 4, GAME_CONFIG.TILE_SIZE - 4);
-      graphics.destroy();
-    }
-  }
 
   update() {
     if (!this.body) {

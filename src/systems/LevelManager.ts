@@ -91,6 +91,8 @@ export class LevelManager {
     for (let y = 0; y < this.currentLevel.height; y++) {
       for (let x = 0; x < this.currentLevel.width; x++) {
         if (this.currentLevel.terrain[y][x] === TILE_TYPES.GOLD) {
+          // Clear the gold tile after finding it (gold becomes collectible entity)
+          this.currentLevel.terrain[y][x] = TILE_TYPES.EMPTY;
           gold.push({ x: x * GAME_CONFIG.TILE_SIZE, y: y * GAME_CONFIG.TILE_SIZE });
         }
       }

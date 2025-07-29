@@ -1,14 +1,17 @@
 import Phaser from 'phaser';
-import { GAME_CONFIG, COLORS, TILE_TYPES } from '../utils/constants';
+import { GAME_CONFIG, TILE_TYPES } from '../utils/constants';
 import { LevelManager } from '../systems/LevelManager';
 import { Player } from '../entities/Player';
 import { Guard } from '../entities/Guard';
+import { Gold } from '../entities/Gold';
+import { SpriteGenerator } from '../utils/SpriteGenerator';
 
 export class GameScene extends Phaser.Scene {
   private levelManager!: LevelManager;
   private terrainLayer!: Phaser.GameObjects.Layer;
   private player!: Player;
   private guards: Guard[] = [];
+  private goldItems: Gold[] = [];
   private terrainGroup!: Phaser.Physics.Arcade.StaticGroup;
 
   constructor() {
@@ -18,6 +21,9 @@ export class GameScene extends Phaser.Scene {
   async create() {
     // Ensure keyboard input is enabled
     this.input.keyboard!.enabled = true;
+    
+    // Generate all sprites at startup
+    SpriteGenerator.generateAllSprites(this);
     
     this.levelManager = new LevelManager();
     await this.levelManager.loadLevels();
@@ -35,6 +41,7 @@ export class GameScene extends Phaser.Scene {
     this.renderTerrain();
     this.createPlayer();
     this.createGuards();
+    this.createGold();
     this.setupCollisions();
   }
 
@@ -61,6 +68,18 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private createGold() {
+    const goldPositions = this.levelManager.findGoldPositions();
+    console.log('Gold positions:', goldPositions);
+    
+    this.goldItems = [];
+    goldPositions.forEach((goldPos, index) => {
+      const gold = new Gold(this, goldPos.x, goldPos.y);
+      this.goldItems.push(gold);
+      console.log(`Gold ${index + 1} created at:`, gold.x, gold.y);
+    });
+  }
+
   update(time: number) {
     if (this.player) {
       this.player.update();
@@ -84,30 +103,24 @@ export class GameScene extends Phaser.Scene {
         const worldX = x * GAME_CONFIG.TILE_SIZE;
         const worldY = y * GAME_CONFIG.TILE_SIZE;
 
-        let color: number = 0x000000;
+        let textureName: string = '';
         let shouldRender = true;
 
         switch (tileType) {
           case TILE_TYPES.BRICK:
-            color = COLORS.BRICK;
+            textureName = 'brick';
             break;
           case TILE_TYPES.METAL:
-            color = COLORS.METAL;
+            textureName = 'metal';
             break;
           case TILE_TYPES.LADDER:
-            color = COLORS.LADDER;
+            textureName = 'ladder';
             break;
           case TILE_TYPES.POLE:
-            color = COLORS.POLE;
+            textureName = 'pole';
             break;
           case TILE_TYPES.GOLD:
-            color = COLORS.GOLD;
-            break;
-          case TILE_TYPES.PLAYER_START:
-            color = COLORS.PLAYER;
-            break;
-          case TILE_TYPES.GUARD_START:
-            color = COLORS.GUARD;
+            textureName = 'gold';
             break;
           default:
             shouldRender = false;
@@ -115,19 +128,13 @@ export class GameScene extends Phaser.Scene {
         }
 
         if (shouldRender) {
-          const tile = this.add.rectangle(
+          const tile = this.add.image(
             worldX + GAME_CONFIG.TILE_SIZE / 2,
             worldY + GAME_CONFIG.TILE_SIZE / 2,
-            GAME_CONFIG.TILE_SIZE,
-            GAME_CONFIG.TILE_SIZE,
-            color
+            textureName
           );
           
-          if (tileType === TILE_TYPES.LADDER) {
-            tile.setStrokeStyle(2, 0x000000);
-          } else if (tileType === TILE_TYPES.POLE) {
-            tile.setSize(GAME_CONFIG.TILE_SIZE, 4);
-          }
+          tile.setDisplaySize(GAME_CONFIG.TILE_SIZE, GAME_CONFIG.TILE_SIZE);
           
           this.terrainLayer.add(tile);
           
@@ -162,11 +169,30 @@ export class GameScene extends Phaser.Scene {
     this.guards.forEach(guard => {
       this.physics.add.overlap(this.player, guard, this.handlePlayerGuardCollision, undefined, this);
     });
+    
+    // Add collision detection between player and gold
+    this.goldItems.forEach(gold => {
+      this.physics.add.overlap(this.player, gold, this.handlePlayerGoldCollision, undefined, this);
+    });
   }
 
   private handlePlayerGuardCollision() {
     console.log('Player caught by guard! Game Over!');
     // For now, just log the collision - later we can add game over logic
     // this.scene.restart(); // Uncomment to restart level on collision
+  }
+
+  private handlePlayerGoldCollision(_player: any, gold: any) {
+    const goldSprite = gold as Gold;
+    if (!goldSprite.isCollected()) {
+      goldSprite.collect();
+      
+      // Check if all gold collected
+      const remainingGold = this.goldItems.filter(g => !g.isCollected());
+      if (remainingGold.length === 0) {
+        console.log('All gold collected! Level complete!');
+        // TODO: Add level completion logic
+      }
+    }
   }
 }
