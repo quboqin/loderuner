@@ -14,6 +14,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   async create() {
+    // Ensure keyboard input is enabled
+    this.input.keyboard!.enabled = true;
+    
     this.levelManager = new LevelManager();
     await this.levelManager.loadLevels();
     
@@ -34,8 +37,12 @@ export class GameScene extends Phaser.Scene {
 
   private createPlayer() {
     const playerStart = this.levelManager.findPlayerStart();
+    console.log('Player start position:', playerStart);
     if (playerStart) {
       this.player = new Player(this, playerStart.x, playerStart.y, this.levelManager);
+      console.log('Player created at:', this.player.x, this.player.y);
+    } else {
+      console.error('No player start position found!');
     }
   }
 

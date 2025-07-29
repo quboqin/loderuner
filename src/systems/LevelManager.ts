@@ -59,6 +59,8 @@ export class LevelManager {
     for (let y = 0; y < this.currentLevel.height; y++) {
       for (let x = 0; x < this.currentLevel.width; x++) {
         if (this.currentLevel.terrain[y][x] === TILE_TYPES.PLAYER_START) {
+          // Clear the player start tile after finding it
+          this.currentLevel.terrain[y][x] = TILE_TYPES.EMPTY;
           return { x: x * GAME_CONFIG.TILE_SIZE, y: y * GAME_CONFIG.TILE_SIZE };
         }
       }
