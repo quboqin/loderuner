@@ -194,11 +194,12 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private handlePlayerGuardCollision() {
-    console.log('Player caught by guard! Game Over!');
-    // For now, just log the collision - later we can add game over logic
-    // this.scene.restart(); // Uncomment to restart level on collision
-  }
+  // Disabled for movement testing
+  // private handlePlayerGuardCollision() {
+  //   console.log('Player caught by guard! Game Over!');
+  //   // For now, just log the collision - later we can add game over logic
+  //   // this.scene.restart(); // Uncomment to restart level on collision
+  // }
 
   private handlePlayerGoldCollision(_player: any, gold: any) {
     const goldSprite = gold as Gold;
