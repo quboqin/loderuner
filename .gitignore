@@ -32,3 +32,6 @@ lerna-debug.log*
 
 # Python virtual environment (existing)
 .venv/
+
+# Claude local settings
+.claude/settings.local.json
