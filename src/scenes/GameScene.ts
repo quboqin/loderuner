@@ -2,11 +2,13 @@ import Phaser from 'phaser';
 import { GAME_CONFIG, COLORS, TILE_TYPES } from '../utils/constants';
 import { LevelManager } from '../systems/LevelManager';
 import { Player } from '../entities/Player';
+import { Guard } from '../entities/Guard';
 
 export class GameScene extends Phaser.Scene {
   private levelManager!: LevelManager;
   private terrainLayer!: Phaser.GameObjects.Layer;
   private player!: Player;
+  private guards: Guard[] = [];
   private terrainGroup!: Phaser.Physics.Arcade.StaticGroup;
 
   constructor() {
@@ -32,6 +34,7 @@ export class GameScene extends Phaser.Scene {
     this.terrainLayer = this.add.layer();
     this.renderTerrain();
     this.createPlayer();
+    this.createGuards();
     this.setupCollisions();
   }
 
@@ -46,10 +49,27 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  update() {
+  private createGuards() {
+    const guardStarts = this.levelManager.findGuardStarts();
+    console.log('Guard start positions:', guardStarts);
+    
+    this.guards = [];
+    guardStarts.forEach((guardStart, index) => {
+      const guard = new Guard(this, guardStart.x, guardStart.y, this.levelManager, this.player);
+      this.guards.push(guard);
+      console.log(`Guard ${index + 1} created at:`, guard.x, guard.y);
+    });
+  }
+
+  update(time: number) {
     if (this.player) {
       this.player.update();
     }
+    
+    // Update all guards
+    this.guards.forEach(guard => {
+      guard.update(time);
+    });
   }
 
   renderTerrain() {
@@ -132,5 +152,21 @@ export class GameScene extends Phaser.Scene {
     if (this.player && this.terrainGroup) {
       this.physics.add.collider(this.player, this.terrainGroup);
     }
+    
+    // Add collisions between guards and terrain
+    this.guards.forEach(guard => {
+      this.physics.add.collider(guard, this.terrainGroup);
+    });
+    
+    // Add collision detection between player and guards
+    this.guards.forEach(guard => {
+      this.physics.add.overlap(this.player, guard, this.handlePlayerGuardCollision, undefined, this);
+    });
+  }
+
+  private handlePlayerGuardCollision() {
+    console.log('Player caught by guard! Game Over!');
+    // For now, just log the collision - later we can add game over logic
+    // this.scene.restart(); // Uncomment to restart level on collision
   }
 }
