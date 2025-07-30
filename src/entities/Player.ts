@@ -113,21 +113,26 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.isOnLadder) {
-      if (this.keys.up.isDown) {
-        body.setVelocityY(-this.moveSpeed);
-      } else if (this.keys.down.isDown) {
-        body.setVelocityY(this.moveSpeed);
+      // Only align to ladder when actually climbing (not moving horizontally)
+      const isClimbing = (this.keys.up.isDown || cursors.up.isDown || this.keys.down.isDown || cursors.down.isDown);
+      const isMovingHorizontally = (this.keys.left.isDown || cursors.left.isDown || this.keys.right.isDown || cursors.right.isDown);
+      
+      if (isClimbing && !isMovingHorizontally) {
+        // Auto-align to ladder when climbing vertically
+        this.alignToLadder();
+        
+        if (this.keys.up.isDown || cursors.up.isDown) {
+          body.setVelocityY(-this.moveSpeed);
+        } else if (this.keys.down.isDown || cursors.down.isDown) {
+          body.setVelocityY(this.moveSpeed);
+        }
+      } else if (isMovingHorizontally) {
+        // Allow falling when moving horizontally off ladder
+        body.setGravityY(300);
+        body.setVelocityY(0); // Stop vertical movement when moving horizontally
       } else {
+        // Standing still on ladder
         body.setVelocityY(0);
-      }
-    }
-    
-    // Also test cursor keys for climbing
-    if (this.isOnLadder) {
-      if (cursors.up.isDown) {
-        body.setVelocityY(-this.moveSpeed);
-      } else if (cursors.down.isDown) {
-        body.setVelocityY(this.moveSpeed);
       }
     }
 
@@ -163,27 +168,74 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private checkTileCollisions() {
-    // Check multiple positions for ladder detection
-    const leftX = Math.floor((this.x - 8) / GAME_CONFIG.TILE_SIZE);
-    const rightX = Math.floor((this.x + 8) / GAME_CONFIG.TILE_SIZE);
     const centerX = Math.floor(this.x / GAME_CONFIG.TILE_SIZE);
     const centerY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
     
+    // Check current position and adjacent positions for ladders
     const currentTile = this.levelManager.getTileAt(centerX, centerY);
-    const leftTile = this.levelManager.getTileAt(leftX, centerY);
-    const rightTile = this.levelManager.getTileAt(rightX, centerY);
+    const leftTile = this.levelManager.getTileAt(centerX - 1, centerY);
+    const rightTile = this.levelManager.getTileAt(centerX + 1, centerY);
     const belowTile = this.levelManager.getTileAt(centerX, centerY + 1);
+    const aboveTile = this.levelManager.getTileAt(centerX, centerY - 1);
     
-    // Player is on ladder if any nearby tile is a ladder
-    this.isOnLadder = currentTile === TILE_TYPES.LADDER || 
-                     leftTile === TILE_TYPES.LADDER || 
-                     rightTile === TILE_TYPES.LADDER;
+    // Check if player is moving horizontally to exit ladder
+    const cursors = this.scene.input.keyboard!.createCursorKeys();
+    const isMovingHorizontally = (this.keys.left.isDown || cursors.left.isDown || this.keys.right.isDown || cursors.right.isDown);
+    
+    // More restrictive ladder detection when moving horizontally
+    if (isMovingHorizontally && this.isOnLadder) {
+      // Only stay on ladder if directly on a ladder tile, not adjacent ones
+      this.isOnLadder = (currentTile === TILE_TYPES.LADDER);
+    } else {
+      // Normal forgiving ladder detection when not moving horizontally
+      this.isOnLadder = (currentTile === TILE_TYPES.LADDER) ||
+                       (leftTile === TILE_TYPES.LADDER && Math.abs(this.x - (centerX - 1) * GAME_CONFIG.TILE_SIZE - GAME_CONFIG.TILE_SIZE/2) < GAME_CONFIG.TILE_SIZE * 0.7) ||
+                       (rightTile === TILE_TYPES.LADDER && Math.abs(this.x - (centerX + 1) * GAME_CONFIG.TILE_SIZE - GAME_CONFIG.TILE_SIZE/2) < GAME_CONFIG.TILE_SIZE * 0.7) ||
+                       (aboveTile === TILE_TYPES.LADDER) ||
+                       (belowTile === TILE_TYPES.LADDER);
+    }
     
     this.isOnPole = currentTile === TILE_TYPES.POLE || belowTile === TILE_TYPES.POLE;
     
-    // Debug only when found ladder
+    // Debug when found ladder
     if (this.isOnLadder) {
-      console.log(`ON LADDER: Player at (${this.x.toFixed(1)}, ${this.y.toFixed(1)}), tiles: center=${currentTile}, left=${leftTile}, right=${rightTile}`);
+      console.log(`ON LADDER: Player at (${this.x.toFixed(1)}, ${this.y.toFixed(1)}), center tile: ${currentTile}, moving horizontally: ${isMovingHorizontally}`);
+    }
+  }
+
+
+  private alignToLadder() {
+    const centerX = Math.floor(this.x / GAME_CONFIG.TILE_SIZE);
+    const centerY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
+    
+    // Check for ladders in adjacent tiles
+    const currentTile = this.levelManager.getTileAt(centerX, centerY);
+    const leftTile = this.levelManager.getTileAt(centerX - 1, centerY);
+    const rightTile = this.levelManager.getTileAt(centerX + 1, centerY);
+    
+    let targetLadderX = null;
+    
+    // Find the ladder to align to
+    if (currentTile === TILE_TYPES.LADDER) {
+      targetLadderX = centerX * GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SIZE / 2;
+    } else if (leftTile === TILE_TYPES.LADDER) {
+      targetLadderX = (centerX - 1) * GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SIZE / 2;
+    } else if (rightTile === TILE_TYPES.LADDER) {
+      targetLadderX = (centerX + 1) * GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SIZE / 2;
+    }
+    
+    // Align to the ladder with a more aggressive snap
+    if (targetLadderX !== null) {
+      const distance = Math.abs(this.x - targetLadderX);
+      if (distance > 2) {
+        const snapSpeed = Math.min(distance * 0.2, 8); // Adaptive snap speed
+        if (this.x < targetLadderX) {
+          this.x = Math.min(this.x + snapSpeed, targetLadderX);
+        } else {
+          this.x = Math.max(this.x - snapSpeed, targetLadderX);
+        }
+        console.log(`Aligning to ladder: current X=${this.x.toFixed(1)}, target X=${targetLadderX}, distance=${distance.toFixed(1)}`);
+      }
     }
   }
 
