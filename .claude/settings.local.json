@@ -9,7 +9,8 @@
       "Bash(npm run:*)",
       "Bash(git commit:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:opengameart.org)"
+      "WebFetch(domain:opengameart.org)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }
