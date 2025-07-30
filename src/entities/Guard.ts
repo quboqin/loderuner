@@ -118,29 +118,21 @@ export class Guard extends Phaser.Physics.Arcade.Sprite {
   private canMoveLeft(): boolean {
     const tileX = Math.floor((this.x - GAME_CONFIG.TILE_SIZE) / GAME_CONFIG.TILE_SIZE);
     const tileY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
-    const belowTileY = Math.floor((this.y + GAME_CONFIG.TILE_SIZE) / GAME_CONFIG.TILE_SIZE);
     
     const leftTile = this.levelManager.getTileAt(tileX, tileY);
-    const leftBelowTile = this.levelManager.getTileAt(tileX, belowTileY);
     
-    // Can move if tile is empty and there's ground below (or ladder/pole)
-    return (leftTile === TILE_TYPES.EMPTY || leftTile === TILE_TYPES.LADDER || leftTile === TILE_TYPES.POLE) &&
-           (leftBelowTile === TILE_TYPES.BRICK || leftBelowTile === TILE_TYPES.METAL || 
-            leftBelowTile === TILE_TYPES.LADDER || leftBelowTile === TILE_TYPES.POLE);
+    // Can move if tile is empty, ladder, or pole - guards should fall into holes!
+    return (leftTile === TILE_TYPES.EMPTY || leftTile === TILE_TYPES.LADDER || leftTile === TILE_TYPES.POLE);
   }
 
   private canMoveRight(): boolean {
     const tileX = Math.floor((this.x + GAME_CONFIG.TILE_SIZE) / GAME_CONFIG.TILE_SIZE);
     const tileY = Math.floor(this.y / GAME_CONFIG.TILE_SIZE);
-    const belowTileY = Math.floor((this.y + GAME_CONFIG.TILE_SIZE) / GAME_CONFIG.TILE_SIZE);
     
     const rightTile = this.levelManager.getTileAt(tileX, tileY);
-    const rightBelowTile = this.levelManager.getTileAt(tileX, belowTileY);
     
-    // Can move if tile is empty and there's ground below (or ladder/pole)
-    return (rightTile === TILE_TYPES.EMPTY || rightTile === TILE_TYPES.LADDER || rightTile === TILE_TYPES.POLE) &&
-           (rightBelowTile === TILE_TYPES.BRICK || rightBelowTile === TILE_TYPES.METAL || 
-            rightBelowTile === TILE_TYPES.LADDER || rightBelowTile === TILE_TYPES.POLE);
+    // Can move if tile is empty, ladder, or pole - guards should fall into holes!
+    return (rightTile === TILE_TYPES.EMPTY || rightTile === TILE_TYPES.LADDER || rightTile === TILE_TYPES.POLE);
   }
 
   // Method to handle being trapped in a hole

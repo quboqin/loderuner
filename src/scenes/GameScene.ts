@@ -209,9 +209,87 @@ export class GameScene extends Phaser.Scene {
       // Check if all gold collected
       const remainingGold = this.goldItems.filter(g => !g.isCollected());
       if (remainingGold.length === 0) {
-        console.log('All gold collected! Level complete!');
-        // TODO: Add level completion logic
+        console.log('All gold collected! Creating exit ladder...');
+        this.createExitLadder();
       }
     }
+  }
+
+  private createExitLadder() {
+    const level = this.levelManager.getCurrentLevel();
+    if (!level) return;
+
+    // Find the center-top position for the exit ladder
+    const centerX = Math.floor(level.width / 2);
+    const topY = 1; // Just below the top border
+
+    // Add exit ladder to level data
+    level.terrain[topY][centerX] = TILE_TYPES.LADDER;
+
+    // Create visual ladder sprite
+    const worldX = centerX * GAME_CONFIG.TILE_SIZE;
+    const worldY = topY * GAME_CONFIG.TILE_SIZE;
+
+    const exitLadder = this.add.image(
+      worldX + GAME_CONFIG.TILE_SIZE / 2,
+      worldY + GAME_CONFIG.TILE_SIZE / 2,
+      'ladder'
+    );
+    
+    exitLadder.setDisplaySize(GAME_CONFIG.TILE_SIZE, GAME_CONFIG.TILE_SIZE);
+    exitLadder.setTint(0xFFD700); // Golden tint to show it's the exit
+    this.terrainLayer.add(exitLadder);
+
+    console.log(`Exit ladder created at tile (${centerX}, ${topY})`);
+
+    // Check for player reaching the exit
+    this.time.addEvent({
+      delay: 100,
+      callback: this.checkExitLadder,
+      callbackScope: this,
+      loop: true
+    });
+  }
+
+  private checkExitLadder() {
+    if (!this.player) return;
+
+    const playerTileX = Math.floor(this.player.x / GAME_CONFIG.TILE_SIZE);
+    const playerTileY = Math.floor(this.player.y / GAME_CONFIG.TILE_SIZE);
+
+    const level = this.levelManager.getCurrentLevel();
+    if (!level) return;
+
+    const centerX = Math.floor(level.width / 2);
+    const exitY = 1; // Exit ladder position
+
+    // Check if player reached the exit ladder position
+    if (playerTileX === centerX && playerTileY === exitY) {
+      console.log('Player reached exit ladder! Level completed!');
+      this.completeLevel();
+    }
+  }
+
+  private completeLevel() {
+    // Show level completion message
+    const completionText = this.add.text(
+      GAME_CONFIG.WIDTH / 2,
+      GAME_CONFIG.HEIGHT / 2,
+      'LEVEL COMPLETE!\nPress SPACE to continue',
+      {
+        fontSize: '32px',
+        color: '#FFD700',
+        align: 'center'
+      }
+    );
+    completionText.setOrigin(0.5, 0.5);
+
+    // Pause the game
+    this.physics.pause();
+
+    // Listen for space key to restart or continue
+    this.input.keyboard!.once('keydown-SPACE', () => {
+      this.scene.restart();
+    });
   }
 }
