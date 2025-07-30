@@ -138,7 +138,16 @@ export class GameScene extends Phaser.Scene {
             textureName = 'pole';
             break;
           case TILE_TYPES.GOLD:
-            textureName = 'gold';
+            // Don't render gold tiles here - they are handled by Gold entities
+            shouldRender = false;
+            break;
+          case TILE_TYPES.PLAYER_START:
+            // Don't render player start tiles - they are handled by Player entity
+            shouldRender = false;
+            break;
+          case TILE_TYPES.GUARD_START:
+            // Don't render guard start tiles - they are handled by Guard entities
+            shouldRender = false;
             break;
           default:
             shouldRender = false;
